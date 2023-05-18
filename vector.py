@@ -9,6 +9,7 @@ class VectorProcess:
         self.id = id
         self.number_of_process = number_of_process
         self.vector_clock = [0] * number_of_process
+        self.aux_vector_clock = [0] * number_of_process
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.bind(('localhost', 5000 + id))
         self.socket.listen()
@@ -29,13 +30,13 @@ class VectorProcess:
             data = conn.recv(4096)
             sender_id, sender_vector_clock = pickle.loads(data)
 
-            # update vector clock with max values from sender vector clock and self vector clock
-            self.vector_clock[sender_id] = max(
-                self.vector_clock[sender_id], sender_vector_clock[sender_id])
-            self.vector_clock[self.id] += 1
+            for p in range(self.number_of_process):
+                max_value = max(self.vector_clock[p], sender_vector_clock[p])
+                self.vector_clock[p] = max_value
 
-            print(
-                f"O Processo {self.id}: recebeu mensagem do processo {sender_id} com a vetor de clock {sender_vector_clock}")
+            print(f"processo: {self.id} vector de clock que tá vindo do processo {sender_id} {sender_vector_clock} já com o incremento do valor do evento")
+            print(f"processo: {self.id} vector de clock atualizado {self.vector_clock}")
+
             conn.close()
 
 
@@ -51,10 +52,6 @@ time.sleep(2)
 proc1.send_message(2)
 time.sleep(2)
 
-# process 2 send message to process 3 and wait 2 seconds
 proc2.send_message(3)
-time.sleep(2)
 
-# process 0 send message to process 3 and wait 2 seconds
-proc0.send_message(3)
-time.sleep(2)
+proc2.send_message(1)
